@@ -1,0 +1,39 @@
+@page "/mygrades"
+@inject HttpClient Http
+
+<h3>Notlarım</h3>
+@if (items == null)
+{
+    <p>Yükleniyor...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Ders</th>
+                <th>Puan</th>
+                <th>Not</th>
+                <th>Tarih</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var g in items)
+            {
+                <tr>
+                    <td>@g.course</td>
+                    <td>@g.score</td>
+                    <td>@g.note</td>
+                    <td>@g.createdAt.ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    record GradeDto(int courseId, string course, int score, string? note, DateTime createdAt);
+    List<GradeDto>? items;
+    protected override async Task OnInitializedAsync()
+    => items = await Http.GetFromJsonAsync<List<GradeDto>>("/api/grades/me");
+}

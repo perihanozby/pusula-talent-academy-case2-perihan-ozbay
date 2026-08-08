@@ -1,0 +1,25 @@
+@page "/enrollments"
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<h3>Öğrenci Ekle/Çıkar (Teacher)</h3>
+<input @bind="courseId" type="number" placeholder="CourseId" />
+<input @bind="studentId" type="number" placeholder="StudentId" />
+<button @onclick="Add">Ekle</button>
+<button @onclick="Remove">Çıkar</button>
+<p>@msg</p>
+
+@code {
+    int courseId, studentId; string msg = "";
+
+    async Task Add()
+    {
+        var res = await Http.PostAsJsonAsync("/api/enrollments", new { courseId, studentId });
+        msg = res.IsSuccessStatusCode ? "Eklendi" : $"Hata ({(int)res.StatusCode})";
+    }
+    async Task Remove()
+    {
+        var res = await Http.DeleteAsync($"/api/enrollments?courseId={courseId}&studentId={studentId}");
+        msg = res.IsSuccessStatusCode ? "Çıkarıldı" : $"Hata ({(int)res.StatusCode})";
+    }
+}

@@ -1,0 +1,42 @@
+@page "/courses"
+@inject HttpClient Http
+@inject StudentAutomation.Web.Services.AuthService Auth
+
+<h3>Dersler</h3>
+@if (data == null)
+{
+    <p>Yükleniyor...</p>
+}
+else
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Kod</th>
+                <th>Ad</th>
+                <th>Durum</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in data)
+            {
+                <tr>
+                    <td>@c.code</td>
+                    <td>@c.name</td>
+                    <td>@c.status</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+@code {
+    record CourseDto(int id, string code, string name, string status);
+    List<CourseDto>? data;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.TryRestoreAsync();
+        var url = Auth.Role == "Admin" ? "/api/courses" : "/api/courses/mine";
+        data = await Http.GetFromJsonAsync<List<CourseDto>>(url);
+    }
+}

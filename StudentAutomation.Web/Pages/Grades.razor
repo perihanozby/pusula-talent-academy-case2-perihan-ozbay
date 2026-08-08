@@ -1,0 +1,20 @@
+@page "/grades"
+@inject HttpClient Http
+
+<h3>Not Girişi (Teacher)</h3>
+<input @bind="courseId" type="number" placeholder="CourseId" />
+<input @bind="studentId" type="number" placeholder="StudentId" />
+<input @bind="score" type="number" placeholder="Score (0-100)" />
+<input @bind="note" placeholder="Not (ops.)" />
+<button @onclick="Save">Kaydet</button>
+<p>@msg</p>
+
+@code {
+    int courseId, studentId, score; string note = ""; string msg = "";
+    async Task Save()
+    {
+        var res = await Http.PostAsJsonAsync("/api/grades",
+        new { courseId, studentId, score, note = string.IsNullOrWhiteSpace(note) ? null : note });
+        msg = res.IsSuccessStatusCode ? "OK" : $"Hata ({(int)res.StatusCode})";
+    }
+}

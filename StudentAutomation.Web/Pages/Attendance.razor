@@ -1,0 +1,99 @@
+@page "/attendance"
+@inject HttpClient Http
+
+<h3>Devamsızlık</h3>
+
+<EditForm Model="model" OnValidSubmit="Save">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-2">
+        <label>CourseId</label>
+        <InputNumber @bind-Value="model.CourseId" class="form-control" />
+    </div>
+
+    <div class="mb-2">
+        <label>StudentId</label>
+        <InputNumber @bind-Value="model.StudentId" class="form-control" />
+    </div>
+
+    <div class="mb-2">
+        <label>Tarih</label>
+        <InputDate @bind-Value="model.Date" class="form-control" />
+    </div>
+
+    <div class="form-check mb-2">
+        <InputCheckbox @bind-Value="model.IsPresent" class="form-check-input" id="presentChk" />
+        <label class="form-check-label" for="presentChk">Var (işaretli) / Yok (boş)</label>
+    </div>
+
+    <div class="mb-3">
+        <label>Not (opsiyonel)</label>
+        <InputTextArea @bind-Value="model.Note" class="form-control" />
+    </div>
+
+    <button class="btn btn-primary" disabled="@saving">Kaydet</button>
+</EditForm>
+
+<p class="mt-2">@msg</p>
+
+@code {
+    bool saving = false;
+    string msg = "";
+
+    MarkAttendanceVm model = new()
+    {
+        Date = DateTime.Today
+    };
+
+    async Task Save()
+    {
+        try
+        {
+            saving = true;
+            msg = "Kaydediliyor...";
+
+            // Tarihi gün bazında UTC'e sabitle (API tarafında .Date eşleşmesi için)
+            var dayUtc = DateTime.SpecifyKind(model.Date.Date, DateTimeKind.Utc);
+
+            var payload = new
+            {
+                courseId = model.CourseId,
+                studentId = model.StudentId,
+                date = dayUtc,
+                isPresent = model.IsPresent,
+                note = string.IsNullOrWhiteSpace(model.Note) ? null : model.Note
+            };
+
+            var res = await Http.PostAsJsonAsync("/api/attendance/mark", payload);
+
+            if (res.IsSuccessStatusCode)
+            {
+                // 201 (Created) ya da 204 (NoContent) başarıdır
+                msg = "OK";
+            }
+            else
+            {
+                var detail = await res.Content.ReadAsStringAsync();
+                msg = $"Hata {(int)res.StatusCode} - {detail}";
+            }
+        }
+        catch (Exception ex)
+        {
+            msg = $"İstisna: {ex.Message}";
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    public class MarkAttendanceVm
+    {
+        public int CourseId { get; set; }
+        public int StudentId { get; set; }
+        public DateTime Date { get; set; }
+        public bool IsPresent { get; set; }
+        public string? Note { get; set; }
+    }
+}

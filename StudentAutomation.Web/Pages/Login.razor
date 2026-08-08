@@ -1,0 +1,32 @@
+@page "/login"
+@inject StudentAutomation.Web.Services.AuthService Auth
+@inject NavigationManager Nav
+
+<h3>Login</h3>
+<input @bind="email" placeholder="email" />
+<input @bind="password" type="password" placeholder="password" />
+<button @onclick="DoLogin">Login</button>
+@if (error != null)
+{
+    <p style="color:red">@error</p>
+}
+
+@code {
+    string email = "", password = "";
+    string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.TryRestoreAsync();
+        if (!string.IsNullOrEmpty(Auth.Role)) Nav.NavigateTo("/dashboard");
+    }
+
+    async Task DoLogin()
+    {
+        error = null;
+        if (await Auth.LoginAsync(email, password))
+            Nav.NavigateTo("/dashboard");
+        else
+            error = "Giriş başarısız";
+    }
+}

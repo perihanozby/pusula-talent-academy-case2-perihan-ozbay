@@ -1,0 +1,22 @@
+@page "/teachers"
+@inject HttpClient Http
+<h3>Öğretmenler</h3>
+@if (items == null)
+{
+    <p>Yükleniyor...</p>
+}
+else
+{
+    <ul>
+        @foreach (var t in items)
+        {
+            <li>@t.fullName (@t.email)</li>
+        }
+    </ul>
+}
+@code {
+    record TeacherDto(int id, string fullName, string email);
+    List<TeacherDto>? items;
+    protected override async Task OnInitializedAsync()
+    => items = await Http.GetFromJsonAsync<List<TeacherDto>>("/api/teachers");
+}

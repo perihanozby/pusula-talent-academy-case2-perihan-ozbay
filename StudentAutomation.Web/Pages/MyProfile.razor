@@ -1,0 +1,22 @@
+@page "/myprofile"
+@inject HttpClient Http
+
+<h3>Profilim</h3>
+@if (data == null)
+{
+    <p>Yükleniyor...</p>
+}
+else
+{
+    <p><b>Ad:</b> @data.fullName</p>
+    <p><b>Numara:</b> @data.number</p>
+    <p><b>Bölüm:</b> @data.department</p>
+    <p><b>Doğum:</b> @(data.birthDate?.ToString("yyyy-MM-dd"))</p>
+}
+
+@code {
+    record MeDto(int id, string fullName, string number, string department, DateTime? birthDate);
+    MeDto? data;
+    protected override async Task OnInitializedAsync()
+    => data = await Http.GetFromJsonAsync<MeDto>("/api/students/me");
+}

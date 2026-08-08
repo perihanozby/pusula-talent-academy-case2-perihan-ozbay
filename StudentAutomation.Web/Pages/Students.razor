@@ -1,0 +1,162 @@
+@page "/students"
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject StudentAutomation.Web.Services.AuthService Auth
+
+<h3>Öğrenciler</h3>
+
+<div class="mb-3">
+    <input class="form-control" placeholder="Ara (Ad)" @bind="q" @bind:event="oninput" />
+</div>
+
+@if (items is null)
+{
+    <p>Yükleniyor...</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Ad</th>
+                <th>Numara</th>
+                <th>Bölüm</th>
+                <th>Doğum</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var s in items)
+            {
+                <tr>
+                    <td>@s.id</td>
+                    <td>@s.fullName</td>
+                    <td>@s.number</td>
+                    <td>@s.department</td>
+                    <td>@(s.birthDate?.ToString("yyyy-MM-dd"))</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary" @onclick="Prev" disabled="@(_page <= 1)">Önceki</button>
+        <span>Sayfa @_page</span>
+        <button class="btn btn-outline-secondary" @onclick="Next" disabled="@(items.Count < _pageSize)">Sonraki</button>
+    </div>
+
+    <hr />
+    <h4>Yeni Öğrenci</h4>
+    <div class="row g-2">
+        <div class="col-md-4"><input class="form-control" @bind="fullName" placeholder="Full Name" /></div>
+        <div class="col-md-4"><input class="form-control" @bind="email" placeholder="Email" /></div>
+        <div class="col-md-4"><input class="form-control" @bind="number" placeholder="Number" /></div>
+        <div class="col-md-4"><input class="form-control" @bind="department" placeholder="Department" /></div>
+        <div class="col-md-4">
+            <InputDate @bind-Value="birthDate" class="form-control" />
+        </div>
+        <div class="col-md-4">
+            <button class="btn btn-primary" @onclick="Create" disabled="@creating">Ekle</button>
+        </div>
+    </div>
+
+    <p class="mt-2 text-danger">@error</p>
+}
+
+@code {
+    public record StudentListDto(int id, string fullName, string number, string department, DateTime? birthDate);
+
+    List<StudentListDto>? items;
+
+    string q = "";
+    int _page = 1;
+    int _pageSize = 20;
+
+    string fullName = "", email = "", number = "", department = "";
+    DateTime? birthDate = null;
+
+    string error = "";
+    bool creating = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Auth.TryRestoreAsync();
+        await Load();
+    }
+
+    async Task Load()
+    {
+        error = "";
+        var url = $"/api/students?page={_page}&pageSize={_pageSize}";
+        if (!string.IsNullOrWhiteSpace(q))
+            url += $"&q={Uri.EscapeDataString(q)}";
+
+        try
+        {
+            items = await Http.GetFromJsonAsync<List<StudentListDto>>(url);
+        }
+        catch (Exception ex)
+        {
+            error = $"Liste yüklenemedi: {ex.Message}";
+            items = new();
+        }
+    }
+
+    async Task Create()
+    {
+        error = "";
+        creating = true;
+        try
+        {
+            // YYYY-MM-DD değerini UTC olarak işaretle
+            DateTime? birthDateUtc = null;
+            if (birthDate.HasValue)
+                birthDateUtc = DateTime.SpecifyKind(birthDate.Value.Date, DateTimeKind.Utc);
+
+            var payload = new
+            {
+                fullName,
+                email,
+                number,
+                department,
+                birthDate = birthDateUtc
+            };
+
+            var res = await Http.PostAsJsonAsync("/api/students", payload);
+            if (res.IsSuccessStatusCode)
+            {
+                fullName = email = number = department = "";
+                birthDate = null;
+                await Load();
+            }
+            else
+            {
+                var detail = await res.Content.ReadAsStringAsync();
+                error = $"Ekleme başarısız ({(int)res.StatusCode}): {detail}";
+            }
+        }
+        catch (Exception ex)
+        {
+            error = $"İstisna: {ex.Message}";
+        }
+        finally
+        {
+            creating = false;
+        }
+    }
+
+
+    async Task Prev()
+    {
+        if (_page > 1) { _page--; await Load(); }
+    }
+
+    async Task Next()
+    {
+        if (items is not null && items.Count == _pageSize)
+        {
+            _page++;
+            await Load();
+        }
+    }
+}

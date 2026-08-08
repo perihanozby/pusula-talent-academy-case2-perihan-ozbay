@@ -1,0 +1,18 @@
+@page "/comments"
+@inject HttpClient Http
+
+<h3>Yorum Ekle (Teacher)</h3>
+<input @bind="courseId" type="number" placeholder="CourseId" />
+<input @bind="studentId" type="number" placeholder="StudentId" />
+<input @bind="text" placeholder="Yorum" />
+<button @onclick="Add">Ekle</button>
+<p>@msg</p>
+
+@code {
+    int courseId, studentId; string text = "", msg = "";
+    async Task Add()
+    {
+        var res = await Http.PostAsJsonAsync("/api/comments", new { courseId, studentId, text });
+        msg = res.IsSuccessStatusCode ? "OK" : $"Hata ({(int)res.StatusCode})";
+    }
+}

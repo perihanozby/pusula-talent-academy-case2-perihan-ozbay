@@ -1,0 +1,33 @@
+@page "/dashboard"
+@inject StudentAutomation.Web.Services.AuthService Auth
+
+<h3>Dashboard (@(Auth.Role ?? "Guest"))</h3>
+
+@if (Auth.Role == "Admin")
+{
+  <ul>
+    <li><a href="/students">Öğrenciler</a></li>
+    <li><a href="/teachers">Öğretmenler</a></li>
+    <li><a href="/courses">Dersler</a></li>
+  </ul>
+}
+else if (Auth.Role == "Teacher")
+{
+  <ul>
+    <li><a href="/courses">Derslerim</a></li>
+    <li><a href="/grades">Not Girişi</a></li>
+    <li><a href="/attendance">Devamsızlık</a></li>
+  </ul>
+}
+else if (Auth.Role == "Student")
+{
+  <ul>
+    <li><a href="/myprofile">Profilim</a></li>
+    <li><a href="/mygrades">Notlarım</a></li>
+    <li><a href="/myattendance">Devamsızlığım</a></li>
+  </ul>
+}
+else
+{
+  <p>Lütfen <a href="/login">giriş</a> yapın.</p>
+}
