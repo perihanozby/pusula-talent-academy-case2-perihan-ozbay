@@ -1,6 +1,6 @@
 namespace StudentAutomation.Api.Features.Auth;
 
-public record RegisterRequest(string Email, string Password, string FullName, string Role);
+public record RegisterRequest(string Email, string Password, string FullName);
 
 public record LoginRequest(string Email, string Password);
 

@@ -37,14 +37,21 @@ public class TeachersController(AppDbContext db) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(TeacherCreateDto dto)
     {
-        if (await db.Users.AnyAsync(u => u.Email == dto.Email))
+        var email = dto.Email.Trim().ToLowerInvariant();
+        var fullName = dto.FullName.Trim();
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(fullName))
+            return BadRequest("Email and full name are required.");
+        if (string.IsNullOrWhiteSpace(dto.Password) || dto.Password.Length < 8)
+            return BadRequest("Password must be at least 8 characters.");
+        if (await db.Users.AnyAsync(u => u.Email == email))
             return Conflict("Email already exists");
 
         var u = new User
         {
-            Email = dto.Email.Trim().ToLowerInvariant(),
-            FullName = dto.FullName,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("ChangeMe123!"),
+            Email = email,
+            FullName = fullName,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
             Role = UserRole.Teacher,
         };
         var t = new Teacher

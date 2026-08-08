@@ -50,6 +50,7 @@ else
     <div class="row g-2">
         <div class="col-md-4"><input class="form-control" @bind="fullName" placeholder="Full Name" /></div>
         <div class="col-md-4"><input class="form-control" @bind="email" placeholder="Email" /></div>
+        <div class="col-md-4"><input class="form-control" @bind="password" type="password" placeholder="Password (min. 8 characters)" /></div>
         <div class="col-md-4"><input class="form-control" @bind="number" placeholder="Number" /></div>
         <div class="col-md-4"><input class="form-control" @bind="department" placeholder="Department" /></div>
         <div class="col-md-4">
@@ -72,7 +73,7 @@ else
     int _page = 1;
     int _pageSize = 20;
 
-    string fullName = "", email = "", number = "", department = "";
+    string fullName = "", email = "", password = "", number = "", department = "";
     DateTime? birthDate = null;
 
     string error = "";
@@ -117,6 +118,7 @@ else
             {
                 fullName,
                 email,
+                password,
                 number,
                 department,
                 birthDate = birthDateUtc
@@ -125,7 +127,7 @@ else
             var res = await Http.PostAsJsonAsync("/api/students", payload);
             if (res.IsSuccessStatusCode)
             {
-                fullName = email = number = department = "";
+                fullName = email = password = number = department = "";
                 birthDate = null;
                 await Load();
             }

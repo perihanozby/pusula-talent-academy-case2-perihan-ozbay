@@ -1,0 +1,79 @@
+@page "/register"
+@using System.Net.Http.Json
+@inject HttpClient Http
+
+<PageTitle>Ã–ÄŸrenci KaydÄ±</PageTitle>
+
+<h3>Ã–ÄŸrenci KaydÄ±</h3>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label">Ad Soyad</label>
+            <input class="form-control" @bind="fullName" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">E-posta</label>
+            <input class="form-control" type="email" @bind="email" />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Parola</label>
+            <input class="form-control" type="password" @bind="password" />
+            <div class="form-text">En az 8 karakter kullanÄ±n.</div>
+        </div>
+        <button class="btn btn-primary" @onclick="CreateAccount" disabled="@submitting">
+            Ã–ÄŸrenci HesabÄ± OluÅŸtur
+        </button>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(message))
+{
+    <div class="alert @(success ? "alert-success" : "alert-danger") mt-3">
+        @message
+    </div>
+}
+
+@code {
+    private string fullName = "";
+    private string email = "";
+    private string password = "";
+    private string message = "";
+    private bool success;
+    private bool submitting;
+
+    private async Task CreateAccount()
+    {
+        message = "";
+        success = false;
+
+        if (string.IsNullOrWhiteSpace(fullName)
+            || string.IsNullOrWhiteSpace(email)
+            || password.Length < 8)
+        {
+            message = "Ad soyad, geÃ§erli bir e-posta ve en az 8 karakterli parola girin.";
+            return;
+        }
+
+        submitting = true;
+        try
+        {
+            var response = await Http.PostAsJsonAsync(
+                "/api/auth/register",
+                new { fullName, email, password });
+
+            success = response.IsSuccessStatusCode;
+            message = success
+                ? "Ã–ÄŸrenci hesabÄ±nÄ±z oluÅŸturuldu. Åimdi giriÅŸ yapabilirsiniz."
+                : await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex)
+        {
+            message = $"KayÄ±t iÅŸlemi tamamlanamadÄ±: {ex.Message}";
+        }
+        finally
+        {
+            submitting = false;
+        }
+    }
+}

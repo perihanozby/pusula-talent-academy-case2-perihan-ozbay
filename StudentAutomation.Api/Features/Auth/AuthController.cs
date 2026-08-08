@@ -17,41 +17,36 @@ public class AuthController(AppDbContext db, IConfiguration cfg) : ControllerBas
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequest req)
     {
-        if (!new[] { "Teacher", "Student" }.Contains(req.Role))
-            return BadRequest("Role must be Teacher or Student");
+        var email = req.Email.Trim().ToLowerInvariant();
+        var fullName = req.FullName.Trim();
 
-        var exists = await db.Users.AnyAsync(u => u.Email == req.Email);
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(fullName))
+            return BadRequest("Email and full name are required.");
+        if (string.IsNullOrWhiteSpace(req.Password) || req.Password.Length < 8)
+            return BadRequest("Password must be at least 8 characters.");
+
+        var exists = await db.Users.AnyAsync(u => u.Email == email);
         if (exists)
             return Conflict("Email already exists");
 
         var user = new User
         {
-            Email = req.Email.Trim().ToLowerInvariant(),
-            FullName = req.FullName,
+            Email = email,
+            FullName = fullName,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password),
-            Role = Enum.Parse<UserRole>(req.Role),
+            Role = UserRole.Student,
         };
         db.Users.Add(user);
         await db.SaveChangesAsync();
 
-        if (user.Role == UserRole.Student)
-            db.Students.Add(
-                new Student
-                {
-                    UserId = user.Id,
-                    Number = $"S{user.Id:D5}",
-                    Department = "General",
-                }
-            );
-        else
-            db.Teachers.Add(
-                new Teacher
-                {
-                    UserId = user.Id,
-                    Title = "Teacher",
-                    Bio = "",
-                }
-            );
+        db.Students.Add(
+            new Student
+            {
+                UserId = user.Id,
+                Number = $"S{user.Id:D5}",
+                Department = "General",
+            }
+        );
         await db.SaveChangesAsync();
         return CreatedAtAction(
             nameof(Register),
@@ -69,7 +64,8 @@ public class AuthController(AppDbContext db, IConfiguration cfg) : ControllerBas
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login(LoginRequest req)
     {
-        var user = await db.Users.SingleOrDefaultAsync(u => u.Email == req.Email);
+        var email = req.Email.Trim().ToLowerInvariant();
+        var user = await db.Users.SingleOrDefaultAsync(u => u.Email == email);
         if (user is null)
             return Unauthorized();
         if (!BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
